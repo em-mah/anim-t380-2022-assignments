@@ -1,3 +1,4 @@
+import os
 import sys
 import maya.cmds as cmds
 import argparse
@@ -21,5 +22,7 @@ for i in range(args.num_cylinders):
 print("Meshes in maya scene:")
 print(maya.cmds.ls(geometry=True))
 
-cmds.file (rename="C:/Users/emily/OneDrive/Documents/GitHub/anim-t380-2022-assignments/assignment-2/python/cylinder.ma")
+savePath = os.getcwd()
+saveFile = savePath + "\\cylinder.ma"
+cmds.file (rename=saveFile)
 cmds.file(save=True, type="mayaAscii")
