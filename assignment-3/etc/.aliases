@@ -1,0 +1,1 @@
+alias asset='export asset=someAsset | echo $asset'
