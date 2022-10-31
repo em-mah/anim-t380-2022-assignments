@@ -31,7 +31,7 @@ print(args.sequence_path)
 for i in os.listdir(args.sequence_path):
     os.rename(args.sequence_path+"/"+i, args.sequence_path+"/"+new_name)
     new_name = increment(new_name)
-    print("incremented:", increment(new_name))
+    #print("incremented:", increment(new_name))
 
 if args.zip == True:
     file_paths=[]
