@@ -1,0 +1,10 @@
+{
+  "locators": "loc",
+  "joints": "def",
+  "controllers": "ctrl",
+  "groups": "nll",
+  "mesh": "geo",
+
+  "pos:": ["m", "l", "r"],
+  "bp": ["spine", "arm"]
+}
