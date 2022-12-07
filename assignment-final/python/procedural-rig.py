@@ -82,7 +82,7 @@ class MyMayaWidget(QWidget):
     def reloadVer_onClicked(self):
         getfileNamingConvention = open(os.path.join(os.getcwd(), 'fileNamingConvention.json'))
         FNC = json.load(getfileNamingConvention)
-        mc.file('{task}_{type}_{model}_{version}RN'.format(**FNC), removeReference=True)
+        #mc.file('{task}_{type}_{model}_{version}RN'.format(**FNC), removeReference=True)
         fileFormat = '{path}{task}.{type}.{model}.{version}.{ext}'.format(**FNC)
         mc.file(fileFormat, r=True, mnc=False)
         
