@@ -1,5 +1,5 @@
 import os, sys
-import maya.mc as mc
+import maya.cmds as mc
 import maya.mel as mel
 import json
 
@@ -23,7 +23,7 @@ class MyMayaWidget(QWidget):
           
         self.setWindowTitle('Rig Builder')        
         self.setGeometry(50, 50, 500, 350)
-        self.resize(400, 350)
+        self.resize(400, 400)
         
         self.label = QtWidgets.QLabel('Rig Builder', self)
         self.label.setAlignment(QtCore.Qt.AlignCenter)
@@ -45,24 +45,22 @@ class MyMayaWidget(QWidget):
         self.button_reloadVer = QPushButton('Reload Version', self)
         self.button_reloadVer.setGeometry(QtCore.QRect(100, 220, 200, 50))
         self.button_reloadVer.clicked.connect(self.reloadVer_onClicked)
-        """
+        
         self.button_loadTemp = QPushButton('Load Template', self)
         self.button_loadTemp.setGeometry(QtCore.QRect(100, 290, 200, 50))
-        self.button_loadTemp.clicked.connect(self.loadTemp_onClicked)"""
-        
-        
+        self.button_loadTemp.clicked.connect(self.loadTemp_onClicked)
+            
          
     def refModel_onClicked(self):
         filePath = mc.fileDialog2(fileMode=1, caption="Reference Model")
         filename = os.path.basename(filePath[0])
-        nspace = os.path.split(filename)[1].split('.')[0]
-        mc.file(filePath[0], r=True, mnc=False, ns=nspace)
+        mc.file(filePath[0], r=True, mnc=False)
     
     def buildRig_onClicked(self): # runs everything
         getRigNamingConvention = open(os.path.join(os.getcwd(), 'rigNamingConvention.json'))
         RNC = json.load(getRigNamingConvention)
-        self.renameLoc()
-        self.createJoints()
+        self.renameLoc(RNC)
+        self.createJoints(RNC)
         # Joint Definitions and Lists
         middleList = []
         rightList = []
@@ -72,17 +70,22 @@ class MyMayaWidget(QWidget):
             middleList = []
             leftList = []
             rightList = []
-            self.classifyJoints()
+            self.classifyJoints(middleList, rightList, leftList)
         elif middleList == [] and leftList == [] and rightList == []:
-            self.classifyJoints()
+            self.classifyJoints(middleList, rightList, leftList)
         else:
             print('Unable to classify joints')
         
-        self.allParent()
-        self.createCtrls()
+        self.allParent(middleList, rightList, leftList)
+        self.createCtrls(RNC, middleList, rightList, leftList)
         
     def reloadVer_onClicked(self):
-        pass
+        getfileNamingConvention = open(os.path.join(os.getcwd(), 'fileNamingConvention.json'))
+        FNC = json.load(getfileNamingConvention)
+        mc.file('{task}_{type}_{model}_{version}RN'.format(**FNC), removeReference=True)
+        fileFormat = '{path}{task}.{type}.{model}.{version}.{ext}'.format(**FNC)
+        mc.file(fileFormat, r=True, mnc=False)
+        
         
     def loadTemp_onClicked(self):
         filePath = mc.fileDialog2(fileMode=1, caption="Load Template")      
@@ -90,7 +93,7 @@ class MyMayaWidget(QWidget):
     
     # Rigging Functions Below
     # Rename locators
-    def renameLoc(self):
+    def renameLoc(self, RNC):
         defLocators = mc.ls(sl=True, type='transform')
         for each in defLocators:
             checkNC = each.split('_')
@@ -101,7 +104,7 @@ class MyMayaWidget(QWidget):
                 print(each)
 
     # Create Joints
-    def createJoints(self):
+    def createJoints(self, RNC):
         locators = mc.ls(sl=True, type='transform')
         for locator in locators:
             namingCon = locator.split('{locators}'.format(**RNC))
@@ -112,7 +115,7 @@ class MyMayaWidget(QWidget):
             mc.delete(locator)
     
     # Classify Right, Left, and Middle Joints
-    def classifyJoints(self):
+    def classifyJoints(self, middleList, rightList, leftList):
         allJoints = mc.ls(type="joint")
         for eachJnt in allJoints:
             splitNames = eachJnt.split('_')
@@ -128,31 +131,31 @@ class MyMayaWidget(QWidget):
             else:
                 print('Nothing to classify')   
 
-    def middleListParent(self):
+    def middleListParent(self, middleList):
         mc.select(middleList, r=True)
         midJoints = mc.ls(sl=True, type='joint')
         midNumber = len(midJoints)
         for mj in range(1, midNumber):
             mc.parent(midJoints[mj], midJoints[mj - 1])
     
-    def leftListParent(self):
+    def leftListParent(self, leftList):
         mc.select(leftList, r=True)
         leftJoints = mc.ls(sl=True, type='joint')
         leftNumber = len(leftJoints)
         for lj in range(1, leftNumber):
             mc.parent(leftJoints[lj], leftJoints[lj - 1])
     
-    def rightListParent(self):
+    def rightListParent(self, rightList):
         mc.select(rightList, r=True)
         rightJoints = mc.ls(sl=True, type='joint')
         rightNumber = len(rightJoints)
         for rj in range(1, rightNumber):
             mc.parent(rightJoints[rj], rightJoints[rj -1])
     
-    def allParent(self):
-        self.middleListParent()
-        self.leftListParent()
-        self.rightListParent()
+    def allParent(self, middleList, rightList, leftList):
+        self.middleListParent(middleList)
+        self.leftListParent(leftList)
+        self.rightListParent(rightList)
     
         # Select all joints and freeze transforms
         allJoints = mc.ls(type="joint")
@@ -164,7 +167,7 @@ class MyMayaWidget(QWidget):
         curve = mel.eval('curve -d 1 -p -22.357529 22.357529 22.357529 -p -22.357529 -22.357529 22.357529 -p 22.357529 -22.357529 22.357529 -p 22.357529 22.357529 22.357529 -p -22.357529 22.357529 22.357529 -p -22.357529 22.357529 -22.357529 -p 22.357529 22.357529 -22.357529 -p 22.357529 22.357529 22.357529 -p 22.357529 -22.357529 22.357529 -p 22.357529 -22.357529 -22.357529 -p 22.357529 22.357529 -22.357529 -p 22.357529 -22.357529 -22.357529 -p -22.357529 -22.357529 -22.357529 -p -22.357529 22.357529 -22.357529 -p -22.357529 -22.357529 -22.357529 -p -22.357529 -22.357529 22.357529 -k 0 -k 1 -k 2 -k 3 -k 4 -k 5 -k 6 -k 7 -k 8 -k 9 -k 10 -k 11 -k 12 -k 13 -k 14 -k 15 ;')
     
     # Creates a controller for each joint in their respective chains
-    def createCtrls(self):
+    def createCtrls(self, RNC, middleList, rightList, leftList):
         allJoints = mc.ls(type='joint')
         mc.select(allJoints, r=True)
         midLast = middleList[len(middleList) - 1]
